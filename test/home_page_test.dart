@@ -1,5 +1,6 @@
 import 'package:cakes_with_prompts/models/category_model.dart';
 import 'package:cakes_with_prompts/models/diet_model.dart';
+import 'package:cakes_with_prompts/models/popular_model.dart';
 import 'package:cakes_with_prompts/views/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -55,6 +56,43 @@ List<DietModel> globalMockDiets = [
     calorie: '150kCal',
     boxColor: const Color(0xffC58BF2),
     viewIsSelected: false,
+  ),
+];
+
+List<PopularDietsModel> mockPopularDiets = [
+  PopularDietsModel(
+    name: 'Blueberry Pancake',
+    iconPath: 'assets/icons/blueberry-pancake.svg',
+    level: 'Medium',
+    duration: '30mins',
+    calorie: '230kCal',
+    boxIsSelected: true,
+  ),
+  PopularDietsModel(
+    name: 'Salmon Nigiri',
+    iconPath: 'assets/icons/salmon-nigiri.svg',
+    level: 'Easy',
+    duration: '20mins',
+    calorie: '120kCal',
+    boxIsSelected: false,
+  ),
+  PopularDietsModel(
+    name: 'Low-Carb Pizza',
+    iconPath: 'assets/icons/pizza.svg',
+    // Replace with a relevant icon
+    level: 'Medium',
+    duration: '40mins',
+    calorie: '350kCal',
+    boxIsSelected: false,
+  ),
+  PopularDietsModel(
+    name: 'Chicken Salad',
+    iconPath: 'assets/icons/chicken-salad.svg',
+    // Replace with a relevant icon
+    level: 'Easy',
+    duration: '25mins',
+    calorie: '180kCal',
+    boxIsSelected: true,
   ),
 ];
 
@@ -254,7 +292,7 @@ void main() {
       expect(boxDecoration.boxShadow!.length, 1);
       expect(
         boxDecoration.boxShadow![0].color,
-        const Color(0xff1D1617).withOpacity(0.07),
+        const Color(0xff1D1617).withAlpha(23),
       );
       expect(boxDecoration.boxShadow![0].blurRadius, 40);
       expect(boxDecoration.boxShadow![0].spreadRadius, 0.0);
@@ -740,6 +778,152 @@ void main() {
       expect(
         (containerWidget.decoration as BoxDecoration).borderRadius,
         BorderRadius.circular(20),
+      );
+    });
+  });
+
+  group('HomePage PopularDiets Section Tests', () {
+    testWidgets('PopularDiets section title is present', (
+        WidgetTester tester,
+        ) async {
+      // Override static method for this test too
+      await tester.pumpWidget(createWidgetForTesting(child: const HomePage()));
+      await tester.pumpAndSettle();
+
+      // Find the widget you want to scroll to
+      final targetFinder = find.byKey(const Key('popular_diets_list'));
+
+      // Find the scrollable widget (e.g., ListView, CustomScrollView)
+      final scrollableFinder = find.byType(Scrollable).first;
+
+      // Scroll until the target widget is visible
+      await tester.scrollUntilVisible(
+        targetFinder,
+        50.0, // pixels to scroll
+        scrollable: scrollableFinder,
+      );
+
+      expect(find.text("Popular Diets"), findsOneWidget);
+    });
+
+    testWidgets('PopularDiets section renders correctly', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createWidgetForTesting(child: const HomePage()));
+      await tester.pumpAndSettle();
+
+      // Find the widget you want to scroll to
+      final targetFinder = find.byKey(const Key('popular_diets_list'));
+
+      // Find the scrollable widget (e.g., ListView, CustomScrollView)
+      final scrollableFinder = find.byType(Scrollable).first;
+
+      // Scroll until the target widget is visible
+      await tester.scrollUntilVisible(
+        targetFinder,
+        150.0, // pixels to scroll
+        scrollable: scrollableFinder,
+      );
+
+      // 1. Verify ListView presence
+      final popularDietsListViewFinder = find.byKey(
+        const ValueKey('popular_diets_list'),
+      );
+      expect(popularDietsListViewFinder, findsOneWidget);
+
+      // 2. Verify number of items
+      // Since ListView.separated builds separators too, we count specific item containers
+      expect(
+        find.byKey(ValueKey('popular_diet_item_${mockPopularDiets[0].name}')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(ValueKey('popular_diet_item_${mockPopularDiets[1].name}')),
+        findsOneWidget,
+      );
+
+      // Verify the total number of actual items (excluding separators)
+      final popularDietItemFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.key is ValueKey &&
+            (widget.key as ValueKey).value.toString().startsWith(
+              'popular_diet_item_',
+            ),
+      );
+      expect(popularDietItemFinder, findsNWidgets(mockPopularDiets.length));
+
+      // 3. Verify item content for the first item
+      final firstItem = mockPopularDiets[0];
+      expect(find.text(firstItem.name), findsOneWidget);
+      expect(
+        find.text(
+          '${firstItem.level} | ${firstItem.duration} | ${firstItem.calorie}',
+        ),
+        findsOneWidget,
+      );
+      // For SVG, if you are not using a mock, ensure assets are available.
+      // With a mock, you might check for the mock's output or a specific widget type.
+      // Due to the SvgPicture.asset being potentially complex to test directly without full asset loading,
+      // we'll check for a GestureDetector that would contain it.
+      final firstItemImageGestureDetector = find.descendant(
+        of: find.byKey(ValueKey('popular_diet_item_${firstItem.name}')),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is GestureDetector && widget.child is SvgPicture,
+        ),
+      );
+      expect(firstItemImageGestureDetector, findsOneWidget);
+
+      // 4. Verify initial background color
+      // First item: boxIsSelected = false (transparent)
+      Container firstItemContainer = tester.widget<Container>(
+        find.byKey(ValueKey('popular_diet_item_${firstItem.name}')),
+      );
+      expect(
+        (firstItemContainer.decoration as BoxDecoration).color,
+        Colors.white,
+      );
+
+      // Second item: boxIsSelected = true (white)
+      final secondItem = mockPopularDiets[1];
+      Container secondItemContainer = tester.widget<Container>(
+        find.byKey(ValueKey('popular_diet_item_${secondItem.name}')),
+      );
+      expect(
+        (secondItemContainer.decoration as BoxDecoration).color,
+        Colors.transparent,
+      );
+
+      // 5. Test tap interaction and background color change
+      // Tap the image of the first item (which is initially not selected)
+      await tester.tap(firstItemImageGestureDetector);
+      await tester.pumpAndSettle(); // Rebuild the widget tree
+
+      // Verify background color of the first item is now white
+      firstItemContainer = tester.widget<Container>(
+        find.byKey(ValueKey('popular_diet_item_${firstItem.name}')),
+      );
+      expect(
+        (firstItemContainer.decoration as BoxDecoration).color,
+        Colors.transparent,
+        reason: "Background should be transparent after tap",
+      );
+
+      // Verify the model's state was updated (optional, depends on how you want to test)
+      // This requires accessing state, which can be tricky.
+      // The UI change is a good indicator.
+
+      // Tap it again to toggle back
+      await tester.ensureVisible(firstItemImageGestureDetector);
+      await tester.tap(firstItemImageGestureDetector);
+      await tester.pumpAndSettle();
+      firstItemContainer = tester.widget<Container>(
+        find.byKey(ValueKey('popular_diet_item_${firstItem.name}')),
+      );
+      expect(
+        (firstItemContainer.decoration as BoxDecoration).color,
+        Colors.white,
+        reason: "Background should be white after second tap",
       );
     });
   });

@@ -1,6 +1,6 @@
 import 'package:cakes_with_prompts/models/category_model.dart';
 import 'package:cakes_with_prompts/models/diet_model.dart';
-import 'package:flutter/foundation.dart';
+import 'package:cakes_with_prompts/models/popular_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 // Assuming your models are in a 'models' directory
@@ -15,6 +15,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<CategoryModel> categories = [];
   List<DietModel> diets = []; // Add diets list
+  List<PopularDietsModel> popularDiets = [];
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   void _loadData() {
     categories = CategoryModel.getCategories();
     diets = DietModel.getDiets(); // Load diets data
+    popularDiets = PopularDietsModel.getPopularDiets();
   }
 
   // Method to handle view button tap and update state
@@ -38,6 +40,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _onPopularDietTapped(int index) {
+    setState(() {
+      popularDiets[index].boxIsSelected = !popularDiets[index].boxIsSelected;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +57,8 @@ class _HomePageState extends State<HomePage> {
           _buildCategoriesSection(),
           _buildSectionTitle("Recommendation\nfor Diet"), // Title for the Diets section
           _buildDietsSection(), // Add the diets section here
+          _buildSectionTitle("Popular Diets"), // Title for the Popular Diets section
+          _buildPopularDietsSection()
           // Add other ListView children below if needed
         ],
       ),
@@ -78,7 +87,7 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: const Color(0xff1D1617).withOpacity(0.07),
+            color: const Color(0xff1D1617).withAlpha(23),
             blurRadius: 40,
             spreadRadius: 0.0,
           )
@@ -298,6 +307,85 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+
+  Widget _buildPopularDietsSection() {
+    return ListView.separated(
+      key: const ValueKey('popular_diets_list'), // Added key to the ListView
+      shrinkWrap: true, // Important for ListView inside another ListView
+      itemCount: popularDiets.length,
+      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+      separatorBuilder: (context, index) => const SizedBox(height: 15),
+      itemBuilder: (context, index) {
+        PopularDietsModel item = popularDiets[index];
+        return Container(
+          height: 100,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          key: ValueKey('popular_diet_item_${item.name}'), // Key for the item
+          decoration: BoxDecoration(
+            color: item.boxIsSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xff1D1617).withAlpha(23),
+                blurRadius: 40,
+                spreadRadius: 0.0,
+              )
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              GestureDetector(
+                onTap: () => _onPopularDietTapped(index),
+                child: SvgPicture.asset(
+                  item.iconPath,
+                  width: 65,
+                  height: 65,
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      '${item.level} | ${item.duration} | ${item.calorie}',
+                      style: const TextStyle(
+                        color: Color(0xff7B6F72),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w300,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 15),
+              // Optional: Add a trailing icon or button if needed
+              SvgPicture.asset(
+                'assets/icons/Arrow - Right 2.svg', // Example icon
+                width: 30,
+                height: 30,
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   AppBar buildAppBar() {
     // ... (your existing buildAppBar method)
